@@ -68,3 +68,4 @@ stargazer(modelos_por_pais,
           dep.var.labels = "Salud",
           out = "resultados_modelos.html",
           keep.stat = c("n", "ll", "aic"))
+# mejorar las tablas
