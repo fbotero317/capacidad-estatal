@@ -1,5 +1,5 @@
 # Clientelismo y políticas públicas
-# Preparación de datos Lapop 2018
+# khemani-data01: Preparación de datos Lapop 2018
 # Felipe Botero
 # 19 de julio de 2024
 
@@ -78,7 +78,7 @@ lapop2018 %>%
 # colegiospub: sd3new2
 # salud: sd6new2
 
-# Rename sd2new2 = carreteras, sd3new2 = colegiospub, sd6new2 = salud
+# Clonar sd2new2 = carreteras, sd3new2 = colegiospub, sd6new2 = salud
 lapop2018 <- lapop2018 %>%
   rename(carreteras = sd2new2) %>%
   rename(colegiospub = sd3new2) %>%
@@ -101,15 +101,15 @@ lapop2018 %>%
   dplyr::select(pais) %>%
   distinct()
 
-# Recode carreteras, colegiospub, salud (1) Very satisfied (2) Satisfied
-# (3) Dissatisfied (4) Very dissatisfied
+# Recode carreteras, colegiospub, salud 1 & 2 to Satisfecho; 3 & 4 to Insatisfecho
 lapop2018 <- lapop2018 %>%
   mutate(carreteras = as.factor(carreteras)) %>%
   mutate(colegiospub = as.factor(colegiospub)) %>%
   mutate(salud = as.factor(salud)) %>%
-  mutate(carreteras = recode(carreteras, `1` = "Muy satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Muy insatisfecho")) %>%
-  mutate(colegiospub = recode(colegiospub, `1` = "Muy satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Muy insatisfecho")) %>%
-  mutate(salud = recode(salud, `1` = "Muy satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Muy insatisfecho"))
+  mutate(carreteras = recode(carreteras, `1` = "Satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Insatisfecho")) %>%
+  mutate(colegiospub = recode(colegiospub, `1` = "Satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Insatisfecho")) %>%
+  mutate(salud = recode(salud, `1` = "Satisfecho", `2` = "Satisfecho", `3` = "Insatisfecho", `4` = "Insatisfecho"))
+
 
 # Frecuencias de calidad de servicios públicos
 lapop2018 %>%
@@ -119,25 +119,32 @@ lapop2018 %>%
         round(2))
 
 # Variables de control
-# sexo: Q1 
+# sexo: Q1
 # edad: Q2
 # rural or urban household: ur (1) Urban (2) Rural
 # number of adults in household: q12c (total adultos) - q12bn (menores de 13)
 # level of education: ed
 # whether food insecure: fs2, fs8
-# ownership of a radio: r3-r16 
+# ownership of a radio: r3-r16
 # ownership of a television: r1
 # ownership of a cell phone: r4a
 # radio as a daily information source: smedia1-smedia9: socialmedia
-# About how often do you pay attention to the news, whether on TV, the radio, newspapers or the internet?: gi0n. 
+# About how often do you pay attention to the news, whether on TV, the radio, newspapers or the internet?: gi0n.
 # voted in the last national elections: vb2
 # attended a campaign meeting or rally for the last national election: cp13
 # worked for a candidate or political party in the last national election
 # contacted a politician or government official about some important problems
 
+# Crear variable adultos como g12c-g12bn
+lapop2018 <- lapop2018 %>%
+  mutate(adultos = pmax(q12c - q12bn, 0))
+prop.table(table(lapop2018$adultos))
+
+
+
 # summary of variables de control
 lapop2018 %>%
-  dplyr::select(q1, q2, ur, q12c, q12bn, ed, fs2, fs8, r1, r4a, gi0n, vb2, cp13) %>%
+  dplyr::select(q1, q2, ur, q12c, adultos, ed, fs2, fs8, r1, r4a, gi0n, vb2, cp13) %>%
   map(~table(.)) %>%
   map(~prop.table(.) %>% 
         round(2))
@@ -152,6 +159,26 @@ lapop2018_filtrado <- lapop2018 %>% filter(pais %in% paises_seleccionados)
 
 # Verificar los países únicos en el conjunto de datos filtrado
 unique(lapop2018_filtrado$pais)
+
+#List of paises
+lapop2018_filtrado |> 
+  dplyr::select(pais) |> 
+  distinct()
+
+# verificar datos de clientelismo en todos los países
+# Frequencies of conocecompravoto by country
+lapop2018_filtrado %>%
+  dplyr::select(pais, conocecompravoto) %>%
+  group_by(pais) %>%
+  summarise(frequency = list(round(prop.table(table(conocecompravoto)), 2))) %>%
+  unnest(frequency)
+
+# colombia no tiene datos de conocecompravoto, pero sí de vendiovoto
+lapop2018_filtrado %>%
+  filter(pais == "Colombia") %>%
+  count(vendiovoto) %>%
+  mutate(prop = round(n / sum(n), 2))
+
 
 
 # Recodificar pais para que en vez de números salgan los nombres de los países
@@ -168,6 +195,9 @@ lapop2018_filtrado <- lapop2018_filtrado %>%
                        `23` = "Jamaica"))
 unique(lapop2018_filtrado$pais)
 
+lapop2018_filtrado |> 
+  dplyr::select(pais) |> 
+  distinct()
 
 # guardar datos rds
 saveRDS(lapop2018_filtrado, "datos/lapop2018_filtrado.rds")
