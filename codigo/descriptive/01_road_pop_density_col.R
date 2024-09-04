@@ -5,25 +5,36 @@ library(pacman)
 p_load(
   sf,
   tidyverse,
-  osmdata
+  osmdata,
+  purrr
 )
 
 
 # 1. Import data --------
-pop_hex <- sf::read_sf("datos/population/colombia/kontur_population_CO_20231101.gpkg")
-bbox<- osmdata::getbb("colombia")
-roads <- sf::read_sf("datos/spatial/GRIP4_Region2_vector_shp/GRIP4_region2.shp")
 col_dpto <- sf::read_sf("datos/spatial/MGN2023_DPTO_POLITICO/MGN_ADM_DPTO_POLITICO.shp")
 colombia_boundary <- sf::read_sf("datos/spatial/colombia_boundary.gpkg")
 
+# Load data ----
+roads_colombia <- sf::read_sf("datos/spatial/colombia_roads.gpkg")
+pop_hex <- sf::read_sf("datos/population/colombia/kontur_population_CO_20231101.gpkg")
 
 # 2. Prepare data -----
-roads <- st_transform(roads, st_crs(colombia_boundary))
-roads_colombia <- st_intersection(roads, colombia_boundary)
-st_write(roads_colombia, "datos/spatial/colombia_roads.gpkg")
 
 
 # 3. Calculate road density using the H3 hexagons ----
 pop_hex <- st_transform(pop_hex, st_crs(roads_colombia))
-roads_in_hexagons <- st_intersection(roads_colombia, pop_hex)
 
+# roads_in_hexagons <- st_intersection(roads_colombia, pop_hex)
+
+
+
+intersections <- st_intersects(x = pop_hex, y = roads_colombia)
+
+pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = dim(pop_hex)[1])
+
+intersectFeatures <- map_dfr(1:dim(pop_hex)[1], function(ix){
+  pb$tick()
+  st_intersection(x = pop_hex[ix,], y = roads_colombia[intersections[[ix]],])
+})
+
+sf::write_sf(intersectFeatures, "datos/spatial/roads_pop_intersect.gpkg")

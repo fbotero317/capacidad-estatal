@@ -1,7 +1,7 @@
 # Clientelismo y políticas públicas
 # Efectos marginales de la variable "conocecompravotoNo" en el modelo de salud
 # Felipe Botero
-# 15 de agostode 2024
+# 15 de agosto de 2024
 
 inicio <- Sys.time()
 
@@ -9,7 +9,6 @@ library(tidyverse)
 library(ggplot2)
 if (!require("margins")) install.packages("margins")
 library(margins)
-
 library(dplyr)
 
 #### Efectos marginales Salud
@@ -45,14 +44,20 @@ print(marginal_effects_table_salud)
 marginal_effects_table_salud <- marginal_effects_table_salud %>%
   mutate(País = factor(País, levels = rev(sort(unique(País)))))
 
-ggplot(marginal_effects_table, aes(x = País, y = AME, ymin = lower, ymax = upper)) +
+ggplot(marginal_effects_table_salud, aes(x = País, y = AME, ymin = lower, ymax = upper)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_flip() +  # Invertir el eje para facilitar la lectura
-  labs(title = "Efectos marginales de saber de la compra de votos\nen la percepción la calidad de los servicios de salud",
+  labs(title = "Marginal effects of knowing about vote buying\non perceptions of health services quality",
        x = NULL,
-       y = "Efecto marginal promedio") +
-  theme_minimal()
+       y = "Average marginal effect") +
+  theme(
+    text = element_text(size = 18),  
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.text = element_text(size = 16),  
+    strip.text = element_text(size = 18)
+  )
+ggsave("plots/efectos_marginales_salud.png", width = 10, height = 6, dpi = 300)
 
 #### Efectos marginales Educación
 # Crear una lista para almacenar los efectos marginales para educación
@@ -93,10 +98,16 @@ ggplot(marginal_effects_table_educacion, aes(x = País, y = AME, ymin = lower, y
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_flip() +  # Invertir el eje para facilitar la lectura
-  labs(title = "Efectos marginales de saber de la compra de votos\nen la percepción la calidad de los servicios de educación",
+  labs(title = "Marginal effects of knowing about vote buying\non perceptions of public schools quality",
        x = NULL,
-       y = "Efecto marginal promedio") +
-  theme_minimal()
+       y = "Average marginal effect") +
+  theme(
+    text = element_text(size = 18),  
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.text = element_text(size = 16),  
+    strip.text = element_text(size = 18)
+  )
+ggsave("plots/efectos_marginales_educacion.png", width = 10, height = 6, dpi = 300)
 
 #### Efectos marginales vías
 # Crear una lista para almacenar los efectos marginales para carreteras
@@ -136,10 +147,17 @@ ggplot(marginal_effects_table_carreteras, aes(x = País, y = AME, ymin = lower, 
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_flip() +  # Invertir el eje para facilitar la lectura
-  labs(title = "Efectos marginales de saber de la compra de votos\nen la percepción la calidad de la infraestructura vial",
+  labs(title = "Marginal effects of knowing about vote buying\non perceptions of road quality",
        x = NULL,
-       y = "Efecto marginal promedio") +
-  theme_minimal()
+       y = "Average marginal effect") +
+  theme(
+    text = element_text(size = 18),  
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.text = element_text(size = 16),  
+    strip.text = element_text(size = 18)
+  )
+ggsave("plots/efectos_marginales_carreteras.png", width = 10, height = 6, dpi = 300)
+
 
 fin <- Sys.time()
 fin - inicio
