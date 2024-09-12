@@ -44,10 +44,11 @@ print(marginal_effects_table_salud)
 marginal_effects_table_salud <- marginal_effects_table_salud %>%
   mutate(País = factor(País, levels = rev(sort(unique(País)))))
 
-ggplot(marginal_effects_table_salud, aes(x = País, y = AME, ymin = lower, ymax = upper)) +
-  geom_pointrange() +
+ggplot(marginal_effects_table_salud, aes(x = País, y = AME)) +
+  geom_point(size = 3) +  # Add points for AME
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2, size = 1) +  # Add error bars with caps
   geom_hline(yintercept = 0, linetype = "dashed") +
-  coord_flip() +  # Invertir el eje para facilitar la lectura
+  coord_flip() +  # Flip the axis for better readability
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of health services quality",
        x = NULL,
        y = "Average marginal effect") +
@@ -95,7 +96,8 @@ marginal_effects_table_educacion <- marginal_effects_table_educacion %>%
   mutate(País = factor(País, levels = rev(sort(unique(País)))))
 
 ggplot(marginal_effects_table_educacion, aes(x = País, y = AME, ymin = lower, ymax = upper)) +
-  geom_pointrange() +
+  geom_point(size = 3) +  # Add points for AME
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2, size = 1) +  # Add error bars with caps
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_flip() +  # Invertir el eje para facilitar la lectura
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of public schools quality",
@@ -144,7 +146,8 @@ marginal_effects_table_carreteras <- marginal_effects_table_carreteras %>%
   mutate(País = factor(País, levels = rev(sort(unique(País)))))
 
 ggplot(marginal_effects_table_carreteras, aes(x = País, y = AME, ymin = lower, ymax = upper)) +
-  geom_pointrange() +
+  geom_point(size = 3) +  # Add points for AME
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2, size = 1) +  # Add error bars with caps
   geom_hline(yintercept = 0, linetype = "dashed") +
   coord_flip() +  # Invertir el eje para facilitar la lectura
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of road quality",
