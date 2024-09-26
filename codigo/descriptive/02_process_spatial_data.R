@@ -6,6 +6,7 @@ gc()
 if(!require(pacman)){install.packages('pacman');library(pacman)}
 p_load(
   tidyverse,
+  units,
   sf,
   purrr,
   furrr,
@@ -78,21 +79,43 @@ ggplot(col_dpto) +
 
 roads_colombia <- st_transform(roads_colombia, st_crs(col_dpto))
 
-# Prepare parallelization
-plan(multisession, workers = 30)  
+if(!file.exists("")){
+  # Prepare parallelization
+  plan(multisession, workers = 30)  
+  
+  intersections <- st_intersects(x = roads_colombia, y = col_dpto)
+  
+  # Initialize progress bar
+  pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = dim(roads_colombia)[1])
+  
+  # Define parallelized intersection function
+  intersectFeatures <- future_map_dfr(1:dim(roads_colombia)[1], function(ix){
+    pb$tick()
+    st_intersection(x = roads_colombia[ix,], y = col_dpto[intersections[[ix]],])
+  })
+  plan(sequential)  # Reset the plan to the default single-core mode
+  sf::write_sf(intersectFeatures, "datos/spatial/roads_dpto_intersect.gpkg")
+  roads_by_department <- intersectFeatures
+  
+} else{
+  
+  # Calculate the length of roads within each department #
+  roads_by_department <- st_read()
+  roads_by_department$length_km <- st_length(roads_by_department) %>% 
+    units::set_units("km") # Convert to kilometers
+  
+  # Calculate department areas in square kilometers
+  col_dpto$area_km2 <- st_area(col_dpto) %>% 
+    units::set_units("km^2") # Convert to square kilometers
+  
+  road_lengths_per_dept <- roads_by_department %>%
+    group_by(dpto_ccdgo) %>%  
+    summarize(total_road_length_km = sum(length_km, na.rm = TRUE))
+  
+  
+  col_dpto <- col_dpto %>%
+    left_join( road_lengths_per_dept, by = "department_id")
+  
+}
 
-intersections <- st_intersects(x = roads_colombia, y = col_dpto)
-
-# Initialize progress bar
-pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = dim(roads_colombia)[1])
-
-# Define parallelized intersection function
-intersectFeatures <- future_map_dfr(1:dim(roads_colombia)[1], function(ix){
-  pb$tick()
-  st_intersection(x = roads_colombia[ix,], y = col_dpto[intersections[[ix]],])
-})
-plan(sequential)  # Reset the plan to the default single-core mode
-sf::write_sf(intersectFeatures, "datos/spatial/roads_dpto_intersect.gpkg")
-
-## Calculate the length of roads within each department ----
 
