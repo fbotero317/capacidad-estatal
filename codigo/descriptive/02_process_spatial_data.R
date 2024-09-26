@@ -75,12 +75,13 @@ ggplot(col_dpto) +
 
 
 #=======================#
-# 4. Road density ------
+# 4. Road density dpto ------
 #=======================#
 
+pop_hex <- st_transform(pop_hex, crs = 4686)
 roads_colombia <- st_transform(roads_colombia, st_crs(col_dpto))
 
-if(!file.exists("datos/spatial/roads_dpto_intersect.geojson")){
+if(!file.exists("datos/spatial/roads_dpto_intersect.rds")){
   # Prepare parallelization
   plan(multisession, workers = 30)  
   
@@ -95,32 +96,70 @@ if(!file.exists("datos/spatial/roads_dpto_intersect.geojson")){
     st_intersection(x = roads_colombia[ix,], y = col_dpto[intersections[[ix]],])
   })
   plan(sequential)  # Reset the plan to the default single-core mode
-  arrow::write_parquet(intersectFeatures,
-                       sink = "datos/spatial/roads_dpto_intersect.parquet")
   saveRDS(intersectFeatures, 
           file ="datos/spatial/roads_dpto_intersect.rds" ) 
   roads_by_department <- intersectFeatures
   
 } else{
   
-  # Calculate the length of roads within each department #
   roads_by_department <- readRDS("datos/spatial/roads_dpto_intersect.rds")
-  roads_by_department$length_km <- st_length(roads_by_department) %>% 
-    units::set_units("km") # Convert to kilometers
-  
-  # Calculate department areas in square kilometers
-  col_dpto$area_km2 <- st_area(col_dpto) %>% 
-    units::set_units("km^2") # Convert to square kilometers
-  
-  road_lengths_per_dept <- roads_by_department %>%
-    group_by(dpto_ccdgo) %>%  
-    summarize(total_road_length_km = sum(length_km, na.rm = TRUE))
-  
-  
-  col_dpto <- col_dpto %>%
-    left_join(st_drop_geometry(road_lengths_per_dept), by = "dpto_ccdgo") %>% 
-    mutate(road_density = total_road_length_km / area_km2)
-  
 }
 
+# Calculate the length of roads within each department #
+roads_by_department$length_km <- st_length(roads_by_department) %>% 
+  units::set_units("km") # Convert to kilometers
 
+# Calculate department areas in square kilometers
+col_dpto$area_km2 <- st_area(col_dpto) %>% 
+  units::set_units("km^2") # Convert to square kilometers
+
+road_lengths_per_dept <- roads_by_department %>%
+  group_by(dpto_ccdgo) %>%  
+  summarize(total_road_length_km = sum(length_km, na.rm = TRUE))
+
+
+col_dpto <- col_dpto %>%
+  left_join(st_drop_geometry(road_lengths_per_dept), by = "dpto_ccdgo") %>% 
+  mutate(road_density = total_road_length_km / area_km2)
+
+library(ggplot2)
+
+ggplot(data = col_dpto) +
+  geom_sf(aes(fill = road_density)) +
+  scale_fill_viridis_c() +
+  labs(title = "Road Density by Department in Colombia", fill = "Road Density\n(km/km²)")
+
+#=======================#
+# 5. Road density hex ------
+#=======================#
+
+roads_by_hex <- st_read("datos/spatial/roads_pop_intersect.geojson")
+
+# Calculate the length of roads within each hexagon #
+roads_by_hex$length_km <- st_length(roads_by_hex) %>% 
+  units::set_units("km") # Convert to kilometers
+
+# Calculate hexagon areas in square kilometers
+pop_hex$area_km2 <- st_area(pop_hex) %>% 
+  units::set_units("km^2") # Convert to square kilometers
+
+road_lengths_per_hex <- roads_by_hex %>%
+  group_by(h3) %>%  
+  summarize(total_road_length_km = sum(length_km, na.rm = TRUE))
+
+
+roads_by_hex <- roads_by_hex %>%
+  left_join(st_drop_geometry(road_lengths_per_dept), by = "h3") %>% 
+  mutate(road_density = total_road_length_km / area_km2)
+
+
+
+# Export -----
+out <- col_dpto %>% 
+  st_drop_geometry() %>% 
+  select(dpto_ccdgo, area_km2, total_road_length_km, road_density)
+arrow::write_parquet(out, "datos/spatial/colombia-departments_road_pop.parquet")
+
+out <- roads_by_hex %>% 
+  st_drop_geometry() %>% 
+arrow::write_parquet(out, "datos/spatial/colombia-hex_road_pop.parquet")
