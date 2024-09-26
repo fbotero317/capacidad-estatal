@@ -1,7 +1,17 @@
 
 
 # 1. Set up environment -----
-
+rm(list = ls())
+gc()
+if(!require(pacman)){install.packages('pacman');library(pacman)}
+p_load(
+  tidyverse,
+  sf,
+  purrr,
+  furrr,
+  future,
+  parallel
+)
 
 # 2. Import data -----
 pop_hex <- sf::read_sf(
@@ -9,11 +19,12 @@ pop_hex <- sf::read_sf(
 col_dpto <- sf::read_sf(
   "datos/spatial/MGN2023_DPTO_POLITICO/MGN_ADM_DPTO_POLITICO.shp")
 colombia_boundary <- sf::read_sf("datos/spatial/colombia_boundary.gpkg")
+roads_colombia <- sf::read_sf("datos/spatial/colombia_roads.gpkg")
 inters <- sf::read_sf("datos/spatial/roads_pop_intersect.geojson")
 
 # 2. Aggregate population data to department level ----
 # Perform the spatial join to assign each hexagon to a department
-plan(multisession, workers = 20)  
+plan(multisession, workers = 30)  
 
 # Define a function to perform the spatial join on a subset of hexagons
 perform_spatial_join <- function(hex_subset, departments) {
@@ -46,7 +57,7 @@ col_dpto$area_km2 <- st_area(col_dpto) / 1e6  # Convert from square meters to sq
 
 # Join the total population with department data
 col_dpto <- col_dpto %>%
-  left_join(total_population_by_dpto, by = "dpto_ccdgo")  
+  left_join(st_drop_geometry(total_population_by_dpto), by = "dpto_ccdgo")  
 
 # Calculate population density: Population per square kilometer
 col_dpto$population_density <- col_dpto$total_population / col_dpto$area_km2
@@ -60,4 +71,28 @@ ggplot(col_dpto) +
   labs(title = "Population Density by Department in Colombia", fill = "Density (Pop/km²)")
 
 
+
+#=======================#
+# 4. Road density ------
+#=======================#
+
+roads_colombia <- st_transform(roads_colombia, st_crs(col_dpto))
+
+# Prepare parallelization
+plan(multisession, workers = 30)  
+
+intersections <- st_intersects(x = roads_colombia, y = col_dpto)
+
+# Initialize progress bar
+pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = dim(roads_colombia)[1])
+
+# Define parallelized intersection function
+intersectFeatures <- future_map_dfr(1:dim(roads_colombia)[1], function(ix){
+  pb$tick()
+  st_intersection(x = roads_colombia[ix,], y = col_dpto[intersections[[ix]],])
+})
+plan(sequential)  # Reset the plan to the default single-core mode
+sf::write_sf(intersectFeatures, "datos/spatial/roads_dpto_intersect.gpkg")
+
+## Calculate the length of roads within each department ----
 
