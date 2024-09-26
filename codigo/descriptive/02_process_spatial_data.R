@@ -8,6 +8,7 @@ p_load(
   tidyverse,
   units,
   sf,
+  geoarrow,
   purrr,
   furrr,
   future,
@@ -79,7 +80,7 @@ ggplot(col_dpto) +
 
 roads_colombia <- st_transform(roads_colombia, st_crs(col_dpto))
 
-if(!file.exists("")){
+if(!file.exists("datos/spatial/roads_dpto_intersect.geojson")){
   # Prepare parallelization
   plan(multisession, workers = 30)  
   
@@ -94,13 +95,16 @@ if(!file.exists("")){
     st_intersection(x = roads_colombia[ix,], y = col_dpto[intersections[[ix]],])
   })
   plan(sequential)  # Reset the plan to the default single-core mode
-  sf::write_sf(intersectFeatures, "datos/spatial/roads_dpto_intersect.gpkg")
+  arrow::write_parquet(intersectFeatures,
+                       sink = "datos/spatial/roads_dpto_intersect.parquet")
+  saveRDS(intersectFeatures, 
+          file ="datos/spatial/roads_dpto_intersect.rds" ) 
   roads_by_department <- intersectFeatures
   
 } else{
   
   # Calculate the length of roads within each department #
-  roads_by_department <- st_read()
+  roads_by_department <- readRDS("datos/spatial/roads_dpto_intersect.rds")
   roads_by_department$length_km <- st_length(roads_by_department) %>% 
     units::set_units("km") # Convert to kilometers
   
@@ -114,7 +118,8 @@ if(!file.exists("")){
   
   
   col_dpto <- col_dpto %>%
-    left_join( road_lengths_per_dept, by = "department_id")
+    left_join(st_drop_geometry(road_lengths_per_dept), by = "dpto_ccdgo") %>% 
+    mutate(road_density = total_road_length_km / area_km2)
   
 }
 

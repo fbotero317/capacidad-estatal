@@ -70,7 +70,7 @@ for (i in 1:n_chunks) {
   sf::write_sf(chunk, "datos/spatial/roads_pop_intersect.gpkg", layer = "roads_pop_intersect", append = (i > 1))
 }
 
-## Option 2: GeoJSON
+## Option 2: GeoJSON ----
 sf::write_sf(intersectFeatures, "datos/spatial/roads_pop_intersect.geojson")
 
 
