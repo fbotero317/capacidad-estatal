@@ -34,18 +34,40 @@ roads_by_hex$length_km <- st_length(roads_by_hex) %>%
 pop_hex$area_km2 <- st_area(pop_hex) %>% 
   units::set_units("km^2") # Convert to square kilometers
 
-road_lengths_per_hex <- roads_by_hex %>%
-  group_by(h3) %>%  
-  summarize(total_road_length_km = sum(length_km, na.rm = TRUE))
+
+# Add road_length per hexagon to roads_by_hexagon
+
+road_lengths_per_hex <-
+  data.table::as.data.table(roads_by_hex)[, .(total_road_length_km =sum(length_km, na.rm = TRUE)), by = h3]
 
 
-roads_by_hex <- roads_by_hex %>%
-  left_join(st_drop_geometry(road_lengths_per_dept), by = "h3") %>% 
-  mutate(road_density = total_road_length_km / area_km2)
+data.table::setDT(road_lengths_per_hex)
 
+# Save the geometry column from roads_by_hex
+geometry <- st_geometry(roads_by_hex)
+
+roads_by_hex <- data.table::merge.data.table(
+  x = data.table::as.data.table(roads_by_hex),
+  y = st_drop_geometry(road_lengths_per_hex),
+  by = 'h3',
+  all.x = TRUE)
+dim(roads_by_hex)
+names(roads_by_hex)
+roads_by_hex <- data.table::merge.data.table(
+  x = roads_by_hex,
+  y = data.table::as.data.table(pop_hex)[, .(h3, area_km2)],
+  by = 'h3',
+  all.x = TRUE
+)
+
+# Calculate road density per hexagon
+roads_by_hex[, road_density := total_road_length_km / area_km2 ]
+
+# Reassign the geometry
+st_geometry(roads_by_hex) <- geometry
 
 # Export -----
 
 out <- roads_by_hex %>% 
-  st_drop_geometry() %>% 
+  st_drop_geometry()
 arrow::write_parquet(out, "datos/spatial/colombia-hex_road_pop.parquet")
