@@ -22,7 +22,7 @@ col_dpto <- sf::read_sf(
 roads_by_hex <- st_read("datos/spatial/roads_pop_intersect.geojson")
 
 #=======================#
-# 5. Road density hex ------
+# 3. Road density hex ------
 #=======================#
 
 
@@ -66,7 +66,7 @@ roads_by_hex[, road_density := total_road_length_km / area_km2 ]
 # Reassign the geometry
 st_geometry(roads_by_hex) <- geometry
 
-# Export -----
+# 4.Export -----
 
 out <- roads_by_hex %>% 
   st_drop_geometry()
