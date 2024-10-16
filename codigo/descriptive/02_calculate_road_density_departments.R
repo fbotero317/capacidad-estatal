@@ -71,7 +71,6 @@ col_dpto <- col_dpto %>%
   left_join(st_drop_geometry(road_lengths_per_dept), by = "dpto_ccdgo") %>% 
   mutate(road_density = total_road_length_km / area_km2)
 
-
 #===================================#
 # 4. Population density dpto ------
 #===================================#
@@ -99,12 +98,23 @@ if(!file.exists("datos/spatial/pop_dpto_intersect.rds")){
   pop_by_department <- readRDS("datos/spatial/pop_dpto_intersect.rds")
 }
 
+# Calculate number of people per department #
+pop_by_department <- pop_by_department %>% 
+  group_by(dpto_ccdgo) %>% 
+  summarize(pop_dpto = sum(population, na.rm = T))
 
+# Join departments with their respective pop density
+col_dpto <- col_dpto %>%
+  left_join(st_drop_geometry(pop_by_department), by = "dpto_ccdgo") %>% 
+  mutate(pop_density = pop_dpto / area_km2)
 
-# 5. Export -----
+#===================================#
+# 5. Export dpto lvl variables ------
+#===================================#
 out <- col_dpto %>% 
   st_drop_geometry() %>% 
-  select(dpto_ccdgo, area_km2, total_road_length_km, road_density, population_density)
+  select(dpto_ccdgo, area_km2, total_road_length_km, road_density, pop_density)
 arrow::write_parquet(out, "datos/spatial/colombia-departments_road_pop.parquet")
+
 
 # End
