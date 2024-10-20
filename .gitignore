@@ -1,6 +1,7 @@
 # Ignorar carpeta de datos
 datos/
 *.dta
+*.gpkg
 
 # Ignorar carpeta literatura
 literatura/
