@@ -1,4 +1,5 @@
 import geopandas as gpd
+import pandas as pd
 import pyogrio
 import os
 from tqdm import tqdm
@@ -48,10 +49,10 @@ for country in tqdm(countries, desc="Processing countries"):
 latin_america = gpd.GeoDataFrame(pd.concat(all_data, ignore_index=True))
 
 # Project to EPSG:102033 (South America Albers Equal Area Conic)
-latin_america = latin_america.to_crs(epsg=102033)
+latin_america = latin_america.to_crs("esri:102033")
 
 # Calculate area
 latin_america['area_km2'] = latin_america.geometry.area / 1e6
 
 # Save the result
-latin_america.to_file("latin_america_admin_divisions.gpkg", driver="GPKG")
+latin_america.to_file(f"{output_path}/latin_america_admin_divisions.gpkg", driver="GPKG")
