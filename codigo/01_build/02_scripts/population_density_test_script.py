@@ -3,6 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 import multiprocessing
 import numpy as np
+from pathlib import Path
 
 # Set up paths and directories
 work_dir = Path(Path(__file__).parent.parent.parent.parent)
