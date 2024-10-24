@@ -14,7 +14,7 @@ data_path = Path(work_dir, 'datos')
 
 # Define specific data paths
 ADMIN_DIVISIONS_PATH = work_dir / 'codigo' / '01_build' / '03_output'/ 'south_america_admin_divisions.gpkg'
-POPULATION_DATA_PATH = data_path / 'spatial' / 'kontur_population_world.gpkg'
+POPULATION_DATA_PATH = data_path / 'spatial' / 'kontur_population_bboxsouthamerica.gpkg'
 RESULTS_PATH = output_path / 'population_density_results.gpkg'
 
 # Hypatia-optimized settings
