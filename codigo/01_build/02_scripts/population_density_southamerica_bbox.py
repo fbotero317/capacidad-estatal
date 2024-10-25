@@ -117,7 +117,7 @@ def process_country(country_code, rank, target_crs="esri:102033"):
             return None
         
         # 2. Get country bounds and transform to EPSG:4326 for filtering population data
-        country_bounds = country_admin.to_crs("EPSG:4326").total_bounds
+        country_bounds = tuple(country_admin.to_crs("EPSG:4326").total_bounds)
         logger.info(f"Rank {rank}: Using bounds for {country_code}: {country_bounds}")
         
         # 3. Load population data for country bounds
