@@ -52,13 +52,15 @@ ggplot(marginal_effects_table_salud, aes(x = País, y = AME)) +
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of health services quality",
        x = NULL,
        y = "Average marginal effect") +
+  theme_minimal()+
   theme(
     text = element_text(size = 18),  
-    plot.title = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20),
     axis.text = element_text(size = 16),  
     strip.text = element_text(size = 18)
   )
 ggsave("plots/efectos_marginales_salud.png", width = 10, height = 6, dpi = 300)
+ggsave("plots/efectos_marginales_salud.eps", width = 10, height = 6, dpi = 300)
 
 #### Efectos marginales Educación
 # Crear una lista para almacenar los efectos marginales para educación
@@ -103,13 +105,15 @@ ggplot(marginal_effects_table_educacion, aes(x = País, y = AME, ymin = lower, y
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of public schools quality",
        x = NULL,
        y = "Average marginal effect") +
+  theme_minimal()+
   theme(
     text = element_text(size = 18),  
-    plot.title = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20),
     axis.text = element_text(size = 16),  
     strip.text = element_text(size = 18)
   )
 ggsave("plots/efectos_marginales_educacion.png", width = 10, height = 6, dpi = 300)
+ggsave("plots/efectos_marginales_educacion.eps", width = 10, height = 6, dpi = 300)
 
 #### Efectos marginales vías
 # Crear una lista para almacenar los efectos marginales para carreteras
@@ -153,14 +157,15 @@ ggplot(marginal_effects_table_carreteras, aes(x = País, y = AME, ymin = lower, 
   labs(title = "Marginal effects of knowing about vote buying\non perceptions of road quality",
        x = NULL,
        y = "Average marginal effect") +
+  theme_minimal()+
   theme(
     text = element_text(size = 18),  
-    plot.title = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20),
     axis.text = element_text(size = 16),  
     strip.text = element_text(size = 18)
   )
 ggsave("plots/efectos_marginales_carreteras.png", width = 10, height = 6, dpi = 300)
-
+ggsave("plots/efectos_marginales_carreteras.eps", width = 10, height = 6, dpi = 300)
 
 fin <- Sys.time()
 fin - inicio
