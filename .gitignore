@@ -1,5 +1,6 @@
 # Ignorar carpeta de datos
 datos/
+spatial/01_raw_data/
 *.dta
 *.gpkg
 
