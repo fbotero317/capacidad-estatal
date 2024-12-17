@@ -309,3 +309,7 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/r,windows,macos,python,jupyternotebooks
 *.png
+
+# Ignorar archivos grandes de cartografía
+*.dbf
+*.shp
